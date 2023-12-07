@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script
+      src="https://code.jquery.com/jquery-3.7.1.js"
+      integrity="sha256-eKhayi8LEQwp4NKxN+CfCh+3qOVUtJn3QNZ0TciWLP4="
+      crossorigin="anonymous"
+    ></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+    />
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css"
+    />
+    <style>
+      /*********** Baseline, reset styles ***********/
+      input[type="range"] {
+        -webkit-appearance: none;
+        appearance: none;
+        background: transparent;
+        cursor: pointer;
+        width: 25rem;
+      }
+
+      /* Removes default focus */
+      input[type="range"]:focus {
+        outline: none;
+      }
+
+      /******** Chrome, Safari, Opera and Edge Chromium styles ********/
+      /* slider track */
+      input[type="range"]::-webkit-slider-runnable-track {
+        background-color: #00a1d6;
+        border-radius: 0.5rem;
+        height: 0.5rem;
+      }
+
+      /* slider thumb */
+      input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none; /* Override default look */
+        appearance: none;
+        margin-top: -4px; /* Centers thumb on the track */
+        background-color: #14b8e1;
+        border-radius: 0.5rem;
+        height: 1rem;
+        width: 1rem;
+      }
+
+      input[type="range"]:focus::-webkit-slider-thumb {
+        outline: 3px solid #14b8e1;
+        outline-offset: 0.125rem;
+      }
+
+      /*********** Firefox styles ***********/
+      /* slider track */
+      input[type="range"]::-moz-range-track {
+        background-color: #00a1d6;
+        border-radius: 0.5rem;
+        height: 0.5rem;
+      }
+
+      /* slider thumb */
+      input[type="range"]::-moz-range-thumb {
+        background-color: #14b8e1;
+        border: none; /*Removes extra border that FF applies*/
+        border-radius: 0.5rem;
+        height: 1rem;
+        width: 1rem;
+      }
+
+      input[type="range"]:focus::-moz-range-thumb {
+        outline: 3px solid #14b8e1;
+        outline-offset: 0.125rem;
+      }
+
+      .header {
+        height: 75px;
+        width: 100%;
+        position: absolute;
+        background-color: palevioletred;
+        border-bottom-left-radius: 50% 20%;
+        border-bottom-right-radius: 50% 20%;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header mb-5">
+      <h4 class="text-white text-center mt-3">Vann's Audio Player</h4>
+    </div>
+    <div class="container">
+      <div class="row">
+        <div class="col-md-4"></div>
+        <div class="col-md-4 mt-5">
+          <center>
+            <img
+              src="https://upload.wikimedia.org/wikipedia/id/b/ba/Andra_-_Season_2.jpg"
+              alt=""
+              class="img img-fluid img-thumbnail mt-5"
+              style="max-height: 200px"
+            />
+            <h5 class="text-center mt-3 audio-title">Surrender</h5>
+            <div id="player"></div>
+            <input
+              type="range"
+              min="0"
+              max="100"
+              value="0"
+              onchange="seekVideo(this.value)"
+              class="form-control form-control-sm"
+              style="border: none"
+              id="seekBar"
+            />
+            <button class="btn btn-sm" onclick="backward()">
+              <i class="bi bi-skip-backward"></i>
+            </button>
+            <button class="btn btn-sm btn-play" onclick="playAudio()">
+              <i class="bi bi-play-fill"></i>
+            </button>
+            <button class="btn btn-sm" onclick="forward()">
+              <i class="bi bi-skip-forward"></i>
+            </button>
+          </center>
+          <p id="currentTime" style="text-align: center">00:00</p>
+          <div class="container mt-5">
+            <h4 class="text-center mb-3"><u>PLAYLIST</u></h4>
+            <h5>Andra & The Backbone</h5>
+            <ul>
+              <li>
+                <button
+                  class="btn btn-play-new"
+                  data-id="VnHVeItfFhA"
+                  data-title="3 Keajaiban"
+                >
+                  3 Keajaiban
+                </button>
+              </li>
+              <li>
+                <button
+                  class="btn btn-play-new"
+                  data-id="e85tWbmazFU"
+                  data-title="Love, Faith & Hope"
+                >
+                  Love, Faith & Hope
+                </button>
+              </li>
+              <li>
+                <button
+                  class="btn btn-play-new"
+                  data-id="L3PqWbL3X1U"
+                  data-title="Muak"
+                >
+                  Muak
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+        <div class="col-md-4"></div>
+      </div>
+    </div>
+
+    <script>
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName("script")[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+      let player;
+      let isSeeking = false;
+      let isPlaying = false;
+      let progressBarInterval;
+
+      function formatTime(timeInSeconds) {
+        const minutes = Math.floor(timeInSeconds / 60);
+        const seconds = Math.floor(timeInSeconds % 60);
+
+        const formattedMinutes = String(minutes).padStart(2, "0");
+        const formattedSeconds = String(seconds).padStart(2, "0");
+
+        return `${formattedMinutes}:${formattedSeconds}`;
+      }
+
+      function onYouTubeIframeAPIReady() {
+        player = new YT.Player("player", {
+          height: "0",
+          width: "0",
+          videoId: "d6vpsERb03k", // Replace with your YouTube video ID
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            disablekb: 1,
+            enablejsapi: 1,
+            iv_load_policy: 3,
+            loop: 0,
+            modestbranding: 1,
+            playsinline: 1,
+          },
+          events: {
+            onReady: onPlayerReady,
+            onStateChange: onPlayerStateChange,
+          },
+        });
+      }
+
+      function onPlayerReady(event) {
+        event.target.setVolume(100); // Set initial volume (0 to 100)
+        event.target.mute(); // Video starts muted
+      }
+
+      function playAudio() {
+        if (player) {
+          if (!isPlaying) {
+            player.unMute(); // Unmute the video
+            player.playVideo();
+            isPlaying = true;
+            updateProgress();
+          } else {
+            player.playVideo();
+          }
+
+          $(".btn-play").html('<i class="bi bi-pause-fill"></i>');
+
+          pauseAudio();
+        }
+      }
+
+      function pauseAudio() {
+        if (player.getPlayerState() === YT.PlayerState.PLAYING) {
+          player.pauseVideo();
+          updateProgress();
+          $(".btn-play").html('<i class="bi bi-play-fill"></i>');
+        }
+      }
+
+      function forward() {
+        if (player) {
+          const currentTime = player.getCurrentTime();
+          player.seekTo(currentTime + 10, true); // Forward by 10 seconds
+          updateProgress();
+        }
+      }
+
+      function backward() {
+        if (player) {
+          const currentTime = player.getCurrentTime();
+          player.seekTo(currentTime - 10, true); // Backward by 10 seconds
+          updateProgress();
+        }
+      }
+
+      function seekVideo(value) {
+        if (player) {
+          const newTime = (value / 100) * player.getDuration();
+          player.seekTo(newTime, true);
+          updateProgress();
+        }
+      }
+
+      function updateProgress() {
+        const progressBar = document.getElementById("seekBar");
+        if (
+          !isSeeking &&
+          player &&
+          player.getPlayerState() === YT.PlayerState.PLAYING
+        ) {
+          const currentTime = player.getCurrentTime();
+          const duration = player.getDuration();
+          const percentage = (currentTime / duration) * 100;
+          progressBar.value = percentage;
+          document.getElementById("currentTime").innerText =
+            formatTime(currentTime);
+        }
+      }
+
+      function onPlayerStateChange(event) {
+        if (event.data === YT.PlayerState.ENDED) {
+          document.getElementById("seekBar").value = 0;
+          isPlaying = false;
+          alert("Audio Ended");
+        }
+
+        if (event.data === YT.PlayerState.PLAYING) {
+          progressBarInterval = setInterval(updateProgress, 1000);
+        }
+      }
+
+      document.getElementById("seekBar").addEventListener("mousedown", () => {
+        isSeeking = true;
+      });
+
+      document.addEventListener("mouseup", () => {
+        if (isSeeking) {
+          isSeeking = false;
+          if (player && player.getPlayerState() === YT.PlayerState.PLAYING) {
+            playAudio();
+          }
+        }
+      });
+
+      $(document).on("click", ".btn-play-new", function () {
+        video_id = $(this).data("id");
+        title = $(this).data("title");
+
+        if (player && typeof player.loadVideoById === "function") {
+          player.loadVideoById(video_id);
+          $(".audio-title").html(title);
+          console.log("changing");
+        }
+      });
+    </script>
+  </body>
+</html>
